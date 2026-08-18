@@ -12,22 +12,29 @@ finished multi-hazard platform.
 
 ## What's here (v1)
 
+- Simple, iOS-style interface: a search bar, a street list, and three
+  colour-coded, tap-to-expand hazard cards (blue = flood, red = bushfire,
+  amber = heat) so it's obvious at a glance which hazard is which.
 - Street search restricted to the exact street list named in the NSW SES
   "Evacuate Now" order of 6 April 2024 for Cornwallis and eastern Richmond
   Lowlands.
-- **Flood** — interactive Hawkesbury-at-Windsor gauge, recorded peaks
-  (2021–2024), and the SES evacuation context for the selected street.
-  Sourced from NSW SES warnings and BoM gauge records.
-- **Bushfire** — plain-language explainer of Bush Fire Prone Land
-  categories, with an explicit "data gap" tag: the NSW RFS dataset
-  (data.nsw.gov.au, CKAN API) is identified as the wiring-in target but is
-  not yet connected for this prototype.
-- **Heat** — three-way comparison of official BoM station readings,
-  Western Sydney University ground-sensor research, and forward projections
-  (Australia Institute HeatWatch / WSU), since no single authoritative
-  address-level heat layer exists yet for this area.
-- Every claim carries a **Published source** or **Data gap** tag so the
-  boundary between what's connected and what's still to be wired in is
+- **Flood** — interactive gauge for the Hawkesbury River at **North
+  Richmond** (BoM station 567098, the gauge closest to this floodplain),
+  with its own minor/moderate/major classification levels, recorded peaks
+  2021–2024, and the SES evacuation context for the selected street.
+  Sourced from BoM gauge records and NSW SES warnings.
+- **Bushfire** — plain-language explainer of Bush Fire Prone Land vegetation
+  categories, plus the specific mapping rule that matters on this
+  floodplain: actively managed cropping/grazing land is generally excluded
+  from BFPL mapping, but unmanaged pasture and riparian corridors can still
+  be mapped. The exact category for a given street still needs a live
+  point-query against the council's certified map — flagged explicitly.
+- **Heat** — four-way read: official BoM station, Western Sydney University
+  ground-sensor research, real Hawkesbury LGA tree-canopy-cover and Heat
+  Vulnerability Index figures (NSW DPHI), and forward projections
+  (Australia Institute HeatWatch / WSU).
+- Every claim carries a **Published source** or **Not yet connected** tag so
+  the boundary between what's wired in and what still needs live data is
   never hidden.
 
 ## Known limitations (by design, disclosed in-app)
@@ -59,9 +66,11 @@ Deploys as a static site (Netlify/Vercel — `npm run build`, publish `dist/`).
 
 - NSW SES emergency warning, Evacuate Now order, 6 April 2024
   (Cornwallis / eastern Richmond Lowlands)
-- Bureau of Meteorology — Hawkesbury River gauge records (Windsor, North
-  Richmond)
-- NSW Bush Fire Prone Land dataset, data.nsw.gov.au (CKAN API), certified
-  by the NSW RFS Commissioner
+- Bureau of Meteorology — Hawkesbury River gauge records, North Richmond
+  WPS (station 567098) and Windsor
+- NSW RFS Guide for Bush Fire Prone Land Mapping; NSW Bush Fire Prone Land
+  dataset, data.nsw.gov.au (CKAN API), certified by the NSW RFS Commissioner
+- NSW Dept of Planning, Housing & Infrastructure — Greener Neighbourhoods
+  tree canopy cover and Heat Vulnerability Index data, Hawkesbury LGA
 - Western Sydney University urban heat microclimate research
 - Australia Institute HeatWatch modelling
