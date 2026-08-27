@@ -118,21 +118,36 @@ const HEAT_LOCAL = [
 ];
 
 /* Task 1 — Bureau of Meteorology Climate Data Online, station 067105 (Richmond RAAF).
-   Blocked pending network access to bom.gov.au from the build environment — see README.
-   No figures are populated here. Nothing below is invented, estimated or interpolated;
-   the panel states plainly what would fill it and why it doesn't yet. */
+   Compiled from the station's own daily maximum/minimum temperature record
+   (product codes IDCJAC0010 / IDCJAC0011, fetched 27 Aug 2026), 1996–2025 —
+   the last 30 complete years; the station opened in 1993, so this is nearly
+   its whole life. Heatwave events use the Bureau's Excess Heat Factor (EHF)
+   method (Nairn & Fawcett 2013): a day counts if the 3-day mean temperature
+   exceeds both the 95th-percentile local-calendar-day threshold and the
+   preceding 30-day average, computed here directly from this station's own
+   record (it has no data before 1993, so an earlier national reference
+   period can't be used). Full workings and caveats are in the README. */
 const HEAT_STATION = {
   id: "067105",
   name: "Richmond RAAF",
   distanceKm: 3,
-  available: false,
-  blockedReason: "Network access to the Bureau of Meteorology's Climate Data Online service was not available from the environment this build ran in, so the daily record could not be retrieved and compiled.",
-  needed: [
-    "Daily maximum and minimum temperature series for station 067105, full period of record",
-    "Compiled counts of days ≥35°C, ≥40°C and ≥45°C per year, last 30 years",
-    "Heatwave events per year under the Bureau's three-or-more-consecutive-day definition",
-    "Longest heatwave run, hottest recorded day and date, and the trend across the period",
+  available: true,
+  periodLabel: "1996–2025",
+  recordSince: 1993,
+  fetched: "27 August 2026",
+  thresholds: [
+    { t: 35, meanPerYear: 19.7, total: 590, decadeFirst: 18.5, decadeLast: 24.6, min: 2, minYear: 2008, max: 42, maxYear: 2018 },
+    { t: 40, meanPerYear: 3.3,  total: 99,  decadeFirst: 2.7,  decadeLast: 4.6 },
+    { t: 45, meanPerYear: 0.2,  total: 7,   decadeFirst: 0.0,  decadeLast: 0.5 },
   ],
+  heatwave: {
+    total: 62,
+    meanPerYear: 2.1,
+    summerTotal: 35,
+    longest: { days: 9, start: "8", end: "16 April 2018" },
+  },
+  hottest: { temp: 47.4, date: "4 January 2020" },
+  dataQuality: "52 of 10,958 days in this window (0.5%) have no recorded maximum, 79 (0.7%) no recorded minimum — small enough not to change the picture, but they mean the true counts could be fractionally higher. A large share of 2014–2026 readings still carry the Bureau's provisional quality flag, pending full quality control.",
 };
 
 const EVENTS = [
@@ -162,7 +177,8 @@ const SOURCES = [
   "NSW SES — Hawkesbury–Nepean flood information, Richmond/Windsor floodplain guide",
   "Bureau of Meteorology — Hawkesbury River gauge records, Windsor and North Richmond",
   "Bureau of Meteorology — heatwave definition and heatwave service",
-  "Bureau of Meteorology — Climate Data Online, station 067105 Richmond RAAF (not yet connected — see README)",
+  "Bureau of Meteorology — Climate Data Online, station 067105 Richmond RAAF, daily max/min temperature (IDCJAC0010 / IDCJAC0011), fetched 27 Aug 2026",
+  "Nairn & Fawcett (2013), The excess heat factor: a metric for heatwave intensity and its use in classifying heatwave severity — methodology applied to the station 067105 record above",
   "NSW Rural Fire Service — Australian Fire Danger Rating System; Gospers Mountain containment records",
   "Australian Disaster Resilience Knowledge Hub — Black Summer bushfires NSW 2019–20",
   "Pfautsch, Wujeska-Klause & Walters (2025), Weather and Climate Extremes",
@@ -377,21 +393,60 @@ function HeatScale({ sel, setSel }) {
 
 function HeatLocalityRecord() {
   const s = HEAT_STATION;
+  const [sel, setSel] = useState(null);
+  const th = s.thresholds[sel] ?? null;
+
   return (
     <div style={{ marginTop: 44 }}>
       <Eyebrow>The local record</Eyebrow>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
         <p style={{ ...body, fontSize: 15.5, color: C.ink80, margin: 0, lineHeight: 1.65, maxWidth: "58ch" }}>
-          Bureau of Meteorology station {s.id}, {s.name} — about {s.distanceKm} km from here. Close enough to be informative, far enough that it is never presented as this property's own reading.
+          Bureau of Meteorology station {s.id}, {s.name} — about {s.distanceKm} km from here. Close enough to be informative, far enough that it is never presented as this property's own reading. Compiled from the station's own daily record, {s.periodLabel} — the last 30 complete years; the station only opened in {s.recordSince}, so this is nearly its whole life.
         </p>
         <Lvl k="locality" />
       </div>
 
-      {!s.available && (
-        <Gap title="Not yet available">
-          {s.blockedReason} Once compiled, this panel will show — for the last 30 years of the station's record — days per year at or above 35°C, 40°C and 45°C, heatwave events per the Bureau's definition, the longest heatwave run, the hottest recorded day and its date, and the trend across the period. Every one of those needs the actual daily maximum and minimum series; none of them are estimated here.
-        </Gap>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 1, background: C.hair, border: `1px solid ${C.hair}`, marginBottom: 4 }}>
+        {s.thresholds.map((t, i) => (
+          <button key={t.t} onClick={() => setSel(sel === i ? null : i)}
+            style={{ background: sel === i ? C.wash : C.page, border: 0, padding: "22px 20px", cursor: "pointer", textAlign: "left", transition: "background 200ms" }}>
+            <p style={{ ...disp, fontSize: 26, fontWeight: 500, color: C.ink, margin: "0 0 5px", letterSpacing: "-.025em", lineHeight: 1 }}>{t.meanPerYear}</p>
+            <p style={{ ...body, fontSize: 12.5, color: C.ink50, margin: 0 }}>days ≥{t.t}°C a year, avg</p>
+          </button>
+        ))}
+      </div>
+      {th && (
+        <div style={{ margin: "18px 0 0" }}>
+          <p style={{ ...body, fontSize: 15, color: C.ink, margin: 0, lineHeight: 1.65, maxWidth: "60ch" }}>
+            {th.decadeFirst}/yr in 1996–2005, {th.decadeLast}/yr in 2016–2025 — {th.total} days ≥{th.t}°C in total across the 30 years.
+            {th.min !== undefined && ` The count swings hard year to year: as few as ${th.min} (${th.minYear}), as many as ${th.max} (${th.maxYear}).`}
+          </p>
+        </div>
       )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 1, background: C.hair, border: `1px solid ${C.hair}`, margin: "26px 0 0" }}>
+        {[
+          [String(s.heatwave.total), "heatwave events, 1996–2025", C.silt],
+          [`${s.heatwave.longest.days} days`, `longest run, ${s.heatwave.longest.start}–${s.heatwave.longest.end}`, C.fire],
+          [`${s.hottest.temp}°C`, `hottest day, ${s.hottest.date}`, C.ember],
+        ].map(([v, l, t]) => (
+          <div key={l} style={{ background: C.page, padding: "22px 20px" }}>
+            <p style={{ ...disp, fontSize: 28, fontWeight: 500, color: t, margin: "0 0 4px", letterSpacing: "-.025em", lineHeight: 1 }}>{v}</p>
+            <p style={{ ...body, fontSize: 12.5, color: C.ink50, margin: 0 }}>{l}</p>
+          </div>
+        ))}
+      </div>
+      <p style={{ ...body, fontSize: 14.5, color: C.ink80, margin: "16px 0 0", lineHeight: 1.6, maxWidth: "60ch" }}>
+        A heatwave here means three or more days in a row unusually hot for the time of year, by the Bureau's own method — so it counts anomalous spells in any season, not only summer. {s.heatwave.summerTotal} of the {s.heatwave.total} were in the summer half of the year, November to March.
+      </p>
+
+      <Gap title="Not a strong trend, on this record">
+        Hot days did increase between the first and second half of this 30-year window, but the swing from year to year is much bigger than the trend — fitted across all 30 years it isn't statistically significant. Thirty years and one nearby station isn't enough to call a robust local climate trend; it's the honest picture at the resolution this record actually supports.
+      </Gap>
+
+      <p style={{ ...body, fontSize: 12.5, color: C.ink50, margin: "18px 0 0", lineHeight: 1.6 }}>
+        {s.dataQuality} Fetched from Climate Data Online on {s.fetched}.
+      </p>
     </div>
   );
 }
@@ -471,7 +526,7 @@ function Property({ addr, onBack }) {
     ["Flood", "High", C.fire, "On the floodplain"],
     ["Evacuation", "Early", C.silt, "Ordered out, 2024"],
     ["Fire", "Grassfire country", C.silt, "Mapping not connected"],
-    ["Heat", "Regional only", C.ink50, "No address count yet"],
+    ["Heat", "19.7 days/yr ≥35°C", C.silt, "Richmond RAAF, 3 km away"],
   ];
 
   return (
@@ -668,7 +723,7 @@ function Property({ addr, onBack }) {
         {/* heat */}
         <Sec eyebrow="Heat" title="What extreme heat means here">
           <p style={{ ...body, fontSize: 16, color: C.ink80, margin: "0 0 34px", lineHeight: 1.65, maxWidth: "56ch" }}>
-            There's no heat sensor on this street. What follows is the regional and research picture for this part of Western Sydney, marked as such — plus what changes heat at the scale of a single block.
+            There's no heat sensor on this street. What follows is the nearest station's own record, the regional and research picture for this part of Western Sydney, and what changes heat at the scale of a single block — each marked at the resolution it actually is.
           </p>
 
           <HeatScale sel={heatSel} setSel={setHeatSel} />
