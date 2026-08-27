@@ -178,6 +178,33 @@ const STREET_CANOPY = {
   "Dight Street":       { canopy: 6.7,  nonVeg: 39.5, ha: 274.3, cls: "Residential" },
 };
 
+/* Task 3 — NSW Bush Fire Prone Land, queried live from the certified statewide
+   layer (NSW_BushFire_Prone_Land FeatureServer, portal.spatial.nsw.gov.au)
+   at the same representative point on each street used for Task 2's canopy
+   lookup. A point-in-polygon result for one point on the street, not a
+   guarantee the whole street length carries the same status — a road can
+   cross a mapping boundary. "Not mapped" means the Bureau's own polygon
+   layer doesn't cover that point at all: it is not a bushfire-risk
+   all-clear, and the grassfire panel above exists precisely because BFPL
+   mapping isn't built to capture cleared-land fire risk. */
+const STREET_BFPL = {
+  "Bensons Lane":       { mapped: true,  category: 3 },
+  "Cornwallis Road":    { mapped: false },
+  "Cornwells Lane":     { mapped: true,  category: 3 },
+  "Cupritts Lane":      { mapped: true,  category: "buffer" },
+  "Gow Lane":           { mapped: false },
+  "Ingolds Lane":       { mapped: false },
+  "Old Kurrajong Road": { mapped: true,  category: 3 },
+  "Onus Lane":          { mapped: true,  category: 3 },
+  "Percival Street":    { mapped: false },
+  "Powells Lane":       { mapped: true,  category: 3 },
+  "Ridges Lane":        { mapped: true,  category: 3 },
+  "Triangle Lane":      { mapped: true,  category: 3 },
+  "Kurrajong Road":     { mapped: true,  category: 3 },
+  "Francis Street":     null,
+  "Dight Street":       { mapped: false },
+};
+
 const EVENTS = [
   { yr: "Oct 2019", t: "Gospers Mountain fire starts", tone: C.fire, d: "One lightning strike in inaccessible bushland north-west of here." },
   { yr: "Jan 2020", t: "Fire contained", tone: C.fire, d: "512,000+ hectares burnt across six local government areas including the Hawkesbury. Around 90 homes destroyed. Rain finally put it out in February." },
@@ -213,7 +240,7 @@ const SOURCES = [
   "Australian Disaster Resilience Knowledge Hub — Black Summer bushfires NSW 2019–20",
   "Pfautsch, Wujeska-Klause & Walters (2025), Weather and Climate Extremes",
   "The Australia Institute — HeatWatch: Extreme Heat in Western Sydney",
-  "NSW RFS Bush Fire Prone Land mapping — not yet connected",
+  "NSW Rural Fire Service — Bush Fire Prone Land, certified statewide layer, queried live via portal.spatial.nsw.gov.au",
   "Hawkesbury City Council flood extent mapping — not yet connected",
 ];
 
@@ -552,11 +579,16 @@ function Property({ addr, onBack }) {
   const shown = addr.raw.toLowerCase().includes(addr.suburb.toLowerCase()) ? addr.raw : `${addr.raw}, ${addr.suburb}`;
   const heat = HEAT_MARKS[heatSel];
   const canopy = STREET_CANOPY[addr.street];
+  const bfpl = STREET_BFPL[addr.street];
+
+  const fireSnap = bfpl == null ? ["Grassfire country", C.silt, "BFPL: not resolved"]
+    : bfpl.mapped ? [`BFPL Category ${bfpl.category === "buffer" ? "buffer" : bfpl.category}`, C.silt, "Plus grassfire risk"]
+    : ["Grassfire country", C.silt, "Not BFPL-mapped"];
 
   const SNAP = [
     ["Flood", "High", C.fire, "On the floodplain"],
     ["Evacuation", "Early", C.silt, "Ordered out, 2024"],
-    ["Fire", "Grassfire country", C.silt, "Mapping not connected"],
+    ["Fire", fireSnap[0], fireSnap[1], fireSnap[2]],
     ["Heat", "19.7 days/yr ≥35°C", C.silt, "Richmond RAAF, 3 km away"],
   ];
 
@@ -731,10 +763,31 @@ function Property({ addr, onBack }) {
 
           <div style={{ marginTop: 44 }}>
             <Eyebrow>Bush fire prone land</Eyebrow>
+            {bfpl === undefined ? null : bfpl === null ? (
+              <>
+                <p style={{ ...body, fontSize: 15.5, color: C.ink80, margin: "0 0 6px", lineHeight: 1.65, maxWidth: "60ch" }}>
+                  This street didn't resolve to a road in the state road network used to query the mapping (see the canopy note above) — no status is shown rather than guessed.
+                </p>
+                <div style={{ marginBottom: 18 }}><Lvl k="gap" /></div>
+              </>
+            ) : (
+              <>
+                <div style={{ marginBottom: 12 }}><Lvl k="street" /></div>
+                <div style={{ background: bfpl.mapped ? C.siltWash : C.wash, padding: "22px 24px", borderRadius: 3, marginBottom: 18 }}>
+                  <p style={{ ...disp, fontSize: 22, fontWeight: 500, color: bfpl.mapped ? C.silt : C.ink, margin: "0 0 8px", letterSpacing: "-.015em" }}>
+                    {bfpl.mapped ? (bfpl.category === "buffer" ? "Buffer zone" : `Category ${bfpl.category}`) : "Not mapped as bush fire prone"}
+                  </p>
+                  <p style={{ ...body, fontSize: 15, color: C.ink, margin: 0, lineHeight: 1.65 }}>
+                    {bfpl.mapped
+                      ? "Queried live against the certified statewide Bush Fire Prone Land layer, at a representative point on this street."
+                      : "The certified statewide layer has no Bush Fire Prone Land polygon at this point on the street. That's not a bushfire-risk all-clear — it just means the RFS's vegetation-based mapping doesn't apply here. See the grassfire panel above: cleared land carries its own fire risk that this mapping was never designed to capture."}
+                  </p>
+                </div>
+              </>
+            )}
             <p style={{ ...body, fontSize: 15.5, color: C.ink80, margin: "0 0 6px", lineHeight: 1.65, maxWidth: "60ch" }}>
-              This property's status isn't connected yet. The mapping is certified by the NSW RFS Commissioner and published openly, so it's a build task rather than a data problem. The category governs what can be built here and to what standard.
+              The mapping is certified by the NSW RFS Commissioner and published openly. Where mapped, the category below governs what can be built here and to what standard.
             </p>
-            <div style={{ marginBottom: 18 }}><Lvl k="gap" /></div>
             {BFPL.map((c, i) => (
               <div key={c.k} style={{ borderTop: `1px solid ${C.hair}` }}>
                 <button onClick={() => setCat(cat === i ? null : i)}

@@ -22,7 +22,7 @@ Status of each data layer this tool depends on, per the build brief's reporting 
 | Heat thresholds & Western Sydney research figures | Pfautsch, Wujeska-Klause & Walters (2025); The Australia Institute HeatWatch | Connected | Regional | Published research, static |
 | **BOM local heat record (Task 1)** | Bureau of Meteorology Climate Data Online, station 067105, Richmond RAAF (IDCJAC0010/0011) | **Connected** — 1996–2025 compiled | Locality (station is ~3 km from the target streets) | Public; Bureau updates the station's record daily, this compilation is a point-in-time snapshot (fetched 27 Aug 2026) |
 | Canopy / non-vegetated cover (Task 2) | NSW DPHI — Greater Sydney Region Tree Canopy to Modified Mesh Block 2024/25 | **Connected** — 14 of 15 streets | Street (ABS Modified Mesh Block containing the street) | CC-BY; captured Dec 2024–Apr 2025, `update_freq: notPlanned` |
-| Bush Fire Prone Land (Task 3) | NSW RFS BFPL mapping, data.nsw.gov.au CKAN API | Not yet connected | Parcel/property (point-in-polygon) | Public; certified by RFS Commissioner |
+| Bush Fire Prone Land (Task 3) | NSW RFS BFPL, `NSW_BushFire_Prone_Land` FeatureServer (portal.spatial.nsw.gov.au) | **Connected** — live point-in-polygon, 13 of 15 streets | Street (one representative point per street) | Public; certified by RFS Commissioner |
 | Local fire history (Task 4) | NSW RFS fire history, NPWS fire history, SEED | Not yet connected | Varies | Public |
 | Street/property flood extents (Task 5) | Hawkesbury City Council flood mapping, NSW Spatial Services, SEED EPI-Flood, 2024 Hawkesbury–Nepean Flood Study | Not yet connected | Unknown until investigated | Public, varies |
 | Evacuation route low points (Task 6) | Transport for NSW, Hawkesbury City Council road data | Not yet connected | Unknown until investigated | Public, varies |
@@ -62,6 +62,18 @@ The scripts used to compute this (pandas, full formulas) aren't checked into the
 **What the figures mean.** "Canopy %" is the share of the mesh block's area covered by vegetation over 3 m tall — a direct dataset figure, not derived. "Non-vegetated %" is the dataset's own category and is *not* the same as impervious or hard surface — a bare paddock is non-vegetated but not impervious, and this dataset doesn't distinguish the two. The app says this explicitly rather than letting "non-vegetated" read as "hard surface."
 
 **Resolution honesty.** Several streets share an identical figure because they sit inside the same mesh block — on this floodplain, "Primary Production" (cleared farmland) mesh blocks can run to 200+ hectares, while a couple of others are under a hectare. This is disclosed in the app rather than presented as uniform property-level precision it doesn't have. It's still a real improvement on a suburb-wide average: it reflects the specific location of each street, not Richmond–Clarendon's mean.
+
+### Task 3 — Bush Fire Prone Land
+
+**Endpoint.** Found via `data.nsw.gov.au`'s CKAN `package_search` ("NSW BushFire Prone Land", published by Spatial Services (DCS)), which links a live ArcGIS FeatureServer rather than a static download:
+
+```
+https://portal.spatial.nsw.gov.au/server/rest/services/Hosted/NSW_BushFire_Prone_Land/FeatureServer/0/query
+```
+
+This is queried directly, in the browser, per address — not pre-scraped — with an `esriGeometryPoint` intersects query against the same representative point on each street used for Task 2's canopy lookup (found via the NSW road centreline layer; see Task 2 above). It returns `category` (1/2/3, or unset for buffer) and `d_category` (the human-readable label). No features returned means the point isn't inside any mapped BFPL polygon.
+
+**What this actually tells you.** A single point per street, not the whole street's length — a road can cross a mapping boundary, so a different address further along the same street could carry a different category. Where mapped, all matched streets came back **Category 3** (grassland/lower-intensity vegetation) or, for one, a **buffer** zone — consistent with this being cleared grazing and cropping country, exactly as the grassfire panel already says. 4 of the 14 geocoded streets returned no polygon at all: **not** a bushfire-risk all-clear, just confirmation that BFPL's vegetation-based mapping doesn't extend to that point — which is precisely why the grassfire panel leads the Fire section rather than this one. Francis Street carries the same gap as in Task 2, for the same reason (no road match).
 
 ## What "not yet available" means throughout
 
