@@ -100,10 +100,10 @@ const STREET_ADDRESSES = {
   "Francis Street": [],
   "Dight Street": ["92", "108", "110", "246"],
   "Cordners Lane": ["16", "45", "63", "73", "98", "100-106", "112-112A"],
-  "Greenway Crescent": [],
+  "Greenway Crescent": ["1", "1A", "5", "9-11", "13", "15", "16", "17", "18", "20", "21", "22", "23", "24", "25", "27", "27A", "27B", "27C", "29", "29A", "31", "38"],
   "Dells Lane": [],
-  "Edwards Road": [],
-  "Sandstone Place": [],
+  "Edwards Road": ["105", "127", "149", "149A", "199", "216"],
+  "Sandstone Place": ["2", "31A", "31B", "33", "53", "60", "73", "93", "100", "115", "128"],
 };
 
 /* One gauge only — Windsor. Mixing gauges on a single post would mislead. */
