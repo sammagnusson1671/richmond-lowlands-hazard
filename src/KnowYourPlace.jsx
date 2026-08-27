@@ -36,9 +36,75 @@ const body = { fontFamily: "'Karla','Segoe UI',system-ui,sans-serif" };
 
 /* ═══════════════════════════ data ═══════════════════════════ */
 
-const STREETS = ["Bensons Lane","Cornwallis Road","Cornwells Lane","Cupritts Lane","Gow Lane","Ingolds Lane","Old Kurrajong Road","Onus Lane","Percival Street","Powells Lane","Ridges Lane","Triangle Lane","Kurrajong Road","Francis Street","Dight Street"];
-const SUBURB_OF = (s) =>
-  ["Bensons Lane","Cornwallis Road","Cornwells Lane","Cupritts Lane","Gow Lane","Onus Lane","Ridges Lane","Triangle Lane"].includes(s) ? "Cornwallis" : "Richmond Lowlands";
+/* Task 7 — street coverage, verified against two independent NSW sources:
+   the SIX Maps suburb-boundary layer and the NSW_Property address layer
+   (both live, queried the same way as Tasks 2–4). The original 15 streets
+   were inherited as a set from the April 2024 SES order, but several were
+   filed under the wrong suburb in that inheritance — both official sources
+   agree, independently, so those are corrected here rather than repeated.
+   Ingolds Lane and Percival Street sit in Clarendon; Old Kurrajong Road,
+   Kurrajong Road and Dight Street sit in Richmond — outside the two
+   suburbs this tool claims to cover, but they were in the original 15, so
+   they stay, correctly labelled, rather than silently dropped. Francis
+   Street never resolved to a road in the state network (see Task 2) so its
+   suburb is unverified and left as inherited. Five more streets — genuinely
+   gazetted in Cornwallis or Richmond Lowlands but never part of the SES
+   order — are added from the same suburb-boundary query. */
+const STREET_INFO = {
+  "Bensons Lane":       { suburb: "Richmond Lowlands", order2024: true },
+  "Cornwallis Road":    { suburb: "Cornwallis",         order2024: true },
+  "Cornwells Lane":     { suburb: "Richmond Lowlands",  order2024: true },
+  "Cupritts Lane":      { suburb: "Cornwallis",         order2024: true },
+  "Gow Lane":           { suburb: "Cornwallis",         order2024: true },
+  "Ingolds Lane":       { suburb: "Clarendon",          order2024: true },
+  "Old Kurrajong Road": { suburb: "Richmond",           order2024: true },
+  "Onus Lane":          { suburb: "Richmond Lowlands",  order2024: true },
+  "Percival Street":    { suburb: "Clarendon",          order2024: true },
+  "Powells Lane":       { suburb: "Richmond Lowlands",  order2024: true },
+  "Ridges Lane":        { suburb: "Richmond Lowlands",  order2024: true },
+  "Triangle Lane":      { suburb: "Richmond Lowlands",  order2024: true },
+  "Kurrajong Road":     { suburb: "Richmond",           order2024: true },
+  "Francis Street":     { suburb: "Richmond Lowlands",  order2024: true, unverifiedSuburb: true },
+  "Dight Street":       { suburb: "Richmond",           order2024: true },
+  "Cordners Lane":      { suburb: "Cornwallis",         order2024: false },
+  "Greenway Crescent":  { suburb: "Cornwallis",         order2024: false },
+  "Dells Lane":         { suburb: "Richmond Lowlands",  order2024: false },
+  "Edwards Road":       { suburb: "Richmond Lowlands",  order2024: false },
+  "Sandstone Place":    { suburb: "Richmond Lowlands",  order2024: false },
+};
+const STREETS = Object.keys(STREET_INFO);
+const SUBURB_OF = (s) => STREET_INFO[s]?.suburb || "Richmond Lowlands";
+const POSTCODE_OF = { Cornwallis: 2756, "Richmond Lowlands": 2753, Clarendon: 2756, Richmond: 2753 };
+
+/* Real house numbers on each street, from NSW Spatial Services' NSW_Property
+   layer (Valuer-General address data) — queried by an envelope around each
+   street's location, kept only where the address exactly matches the street
+   name. Not exhaustive (a small envelope can miss addresses at a long rural
+   street's far end), so absence of a number here isn't treated as proof an
+   address doesn't exist — only presence is used, to show a verification
+   badge. See README, Task 7. */
+const STREET_ADDRESSES = {
+  "Bensons Lane": ["4", "4A", "23"],
+  "Cornwallis Road": ["171", "192", "232", "258", "278", "299", "300", "332", "346", "362"],
+  "Cornwells Lane": ["55", "77", "88", "100", "114", "115", "137", "144"],
+  "Cupritts Lane": [],
+  "Gow Lane": ["1"],
+  "Ingolds Lane": ["17", "11-13"],
+  "Old Kurrajong Road": ["5", "33", "49", "100", "122", "136", "148", "169"],
+  "Onus Lane": ["10"],
+  "Percival Street": ["2"],
+  "Powells Lane": ["1", "78"],
+  "Ridges Lane": ["7", "22", "33", "44", "83", "98", "106", "62-90"],
+  "Triangle Lane": ["1", "2", "42"],
+  "Kurrajong Road": ["186"],
+  "Francis Street": [],
+  "Dight Street": ["92", "108", "110", "246"],
+  "Cordners Lane": ["16", "45", "63", "73", "98", "100-106", "112-112A"],
+  "Greenway Crescent": [],
+  "Dells Lane": [],
+  "Edwards Road": [],
+  "Sandstone Place": [],
+};
 
 /* One gauge only — Windsor. Mixing gauges on a single post would mislead. */
 const MARKS = [
@@ -176,6 +242,11 @@ const STREET_CANOPY = {
   "Kurrajong Road":     { canopy: 49.3, nonVeg: 36.8, ha: 6.2,   cls: "Primary Production" },
   "Francis Street":     null,
   "Dight Street":       { canopy: 6.7,  nonVeg: 39.5, ha: 274.3, cls: "Residential" },
+  "Cordners Lane":      { canopy: 18.4, nonVeg: 31.9, ha: 215.2, cls: "Primary Production" },
+  "Greenway Crescent":  { canopy: 34.1, nonVeg: 27.2, ha: 2.4,   cls: "Residential" },
+  "Dells Lane":         { canopy: 25.6, nonVeg: 39.6, ha: 20.2,  cls: "Primary Production" },
+  "Edwards Road":       { canopy: 3.2,  nonVeg: 20.6, ha: 175.2, cls: "Primary Production" },
+  "Sandstone Place":    { canopy: 1.6,  nonVeg: 26.4, ha: 444.3, cls: "Residential" },
 };
 
 /* Task 3 — NSW Bush Fire Prone Land, queried live from the certified statewide
@@ -203,6 +274,11 @@ const STREET_BFPL = {
   "Kurrajong Road":     { mapped: true,  category: 3 },
   "Francis Street":     null,
   "Dight Street":       { mapped: false },
+  "Cordners Lane":      { mapped: false },
+  "Greenway Crescent":  { mapped: false },
+  "Dells Lane":         { mapped: true,  category: 3 },
+  "Edwards Road":       { mapped: true,  category: 3 },
+  "Sandstone Place":    { mapped: true,  category: 3 },
 };
 
 /* Task 4 — NPWS Fire History (Wildfires and Prescribed Burns), queried live
@@ -258,6 +334,8 @@ const SOURCES = [
   "Nairn & Fawcett (2013), The excess heat factor: a metric for heatwave intensity and its use in classifying heatwave severity — methodology applied to the station 067105 record above",
   "NSW Department of Planning, Housing and Infrastructure — Greater Sydney Region Tree Canopy to Modified Mesh Block 2024/25 (canopy and non-vegetated cover)",
   "NSW Spatial Services — road centreline data, used to locate each street against the canopy mapping",
+  "NSW Spatial Services — suburb boundary layer, used to verify and correct street-to-suburb attribution and to find streets not in the original 15",
+  "NSW Spatial Services — property address data (NSW_Property), used to verify real house numbers on each street",
   "NSW National Parks and Wildlife Service — Fire History (Wildfires and Prescribed Burns), queried live via mapprod3.environment.nsw.gov.au",
   "NSW Rural Fire Service — Australian Fire Danger Rating System; Gospers Mountain containment records",
   "Australian Disaster Resilience Knowledge Hub — Black Summer bushfires NSW 2019–20",
@@ -542,7 +620,11 @@ function Landing({ onSubmit }) {
   const go = () => {
     const hit = STREETS.find((s) => v.toLowerCase().includes(s.toLowerCase()));
     if (!hit) { setErr(true); return; }
-    onSubmit({ raw: v.trim(), street: hit, suburb: SUBURB_OF(hit) });
+    const numMatch = v.match(/^\s*(\d+[a-zA-Z]?)/);
+    const typedNum = numMatch ? numMatch[1].toUpperCase() : null;
+    const known = STREET_ADDRESSES[hit] || [];
+    const verified = typedNum ? known.includes(typedNum) : false;
+    onSubmit({ raw: v.trim(), street: hit, suburb: SUBURB_OF(hit), verified });
   };
 
   return (
@@ -572,12 +654,12 @@ function Landing({ onSubmit }) {
         </div>
 
         {err && <p style={{ ...body, fontSize: 14.5, color: C.fire, margin: "14px 0 0", lineHeight: 1.5 }}>
-          Not covered yet. This early version covers Cornwallis and Richmond Lowlands only.
+          Not covered yet. This early version covers Cornwallis, Richmond Lowlands and the handful of neighbouring streets named in the April 2024 evacuation order.
         </p>}
 
         <p style={{ ...body, fontSize: 13, color: C.ink50, margin: "34px 0 12px", letterSpacing: ".02em" }}>Or try</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-          {["33 Ridges Lane, Cornwallis", "8 Percival Street, Richmond Lowlands"].map((a) => (
+          {["33 Ridges Lane, Richmond Lowlands", "2 Percival Street, Clarendon"].map((a) => (
             <button key={a} onClick={() => { setV(a); setErr(false); }}
               style={{ ...body, fontSize: 14, padding: 0, border: 0, background: "none", color: C.water, cursor: "pointer", borderBottom: `1px solid ${C.ink25}`, paddingBottom: 2 }}>
               {a}
@@ -637,7 +719,7 @@ function Property({ addr, onBack }) {
         {/* hero */}
         <div style={{ padding: "56px 0 40px" }}>
           <p style={{ ...body, fontSize: 11.5, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: C.ink50, margin: "0 0 16px" }}>
-            {addr.suburb} · Hawkesbury LGA · NSW 2753
+            {addr.suburb} · Hawkesbury LGA · NSW {POSTCODE_OF[addr.suburb] || 2753}
           </p>
           <h1 style={{ ...disp, fontSize: "clamp(34px,6.4vw,58px)", fontWeight: 300, color: C.ink, margin: 0, letterSpacing: "-.03em", lineHeight: 1.02 }}>
             {shown}
@@ -658,6 +740,11 @@ function Property({ addr, onBack }) {
           <span style={{ ...body, fontSize: 13, color: C.ink80 }}>
             <span style={{ color: C.go, fontWeight: 700 }}>✓</span> Verified official data — NSW SES, Bureau of Meteorology, NSW RFS
           </span>
+          {addr.verified && (
+            <span style={{ ...body, fontSize: 13, color: C.ink80 }}>
+              <span style={{ color: C.go, fontWeight: 700 }}>✓</span> This house number is on record in NSW's property address data
+            </span>
+          )}
           <button onClick={() => setSrc(!src)} style={{ ...body, background: "none", border: 0, color: C.water, fontSize: 13, cursor: "pointer", padding: 0, borderBottom: `1px solid ${C.ink25}` }}>
             {src ? "Hide sources" : "View sources"}
           </button>
