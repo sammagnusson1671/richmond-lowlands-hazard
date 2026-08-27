@@ -25,7 +25,7 @@ Status of each data layer this tool depends on, per the build brief's reporting 
 | Bush Fire Prone Land (Task 3) | NSW RFS BFPL, `NSW_BushFire_Prone_Land` FeatureServer (portal.spatial.nsw.gov.au) | **Connected** — live point-in-polygon, 13 of 15 streets | Street (one representative point per street) | Public; certified by RFS Commissioner |
 | Local fire history (Task 4) | NPWS Fire History (Wildfires and Prescribed Burns), `NPWS_Fire_History` MapServer (mapprod3.environment.nsw.gov.au) | **Connected** — locality-level, 10 km radius | Locality (NPWS estate + RFS/Forestry-imported fires; not a private-land ignition register) | Public; NPWS-maintained |
 | Street/property flood extents (Task 5) | NSW EPI-Flood (statewide LEP layer); Hawkesbury FRMSP 2025 (NSW Flood Data Portal) | **Investigated — real gap found and documented**, not just unattempted | N/A — see below | EPI-Flood: public, but doesn't cover Hawkesbury LGA. FRMSP 2025 GIS files: require a Flood Data Portal login |
-| Evacuation route low points (Task 6) | Transport for NSW, Hawkesbury City Council road data | Not yet connected | Unknown until investigated | Public, varies |
+| Evacuation route low points (Task 6) | Hawkesbury evacuation route studies (Flood Data Portal); TfNSW open data | **Investigated — same access gap as Task 5**, not fabricated from terrain data | N/A | Studies exist, login-gated; TfNSW open data has no historical closure-height dataset |
 | Street coverage & address search (Task 7) | NSW Geographical Names Board, GNAF, OpenStreetMap | Not yet connected — 15 streets from the April 2024 SES order only | Street, moving to address | Public |
 | Deployment (Task 8) | Netlify / Vercel | Not yet deployed | — | — |
 
@@ -102,6 +102,16 @@ The dataset *metadata* is public (`GET /api/3/action/package_search` and `packag
 **What would close this gap:** a registered account on the NSW Flood Data Portal (a human, presumably Hawkesbury Council or a consultant with a legitimate need, would need to request access) to download the Flood Planning Area and Flood Emergency Response Classification shapefiles, then a point-in-polygon lookup exactly like Tasks 2–4 above — the method is proven, only the access is missing. Failing that, the same council could be asked directly for a data-sharing arrangement, since they are both the study's owner and the organisation this whole project is trying to demonstrate value to.
 
 The marker post was **not** converted to a slider and no flood height was added to any street or property — per the brief's explicit instruction, that only happens once real model data exists to drive it, and none was actually obtained here, however close it turned out to be.
+
+### Task 6 — evacuation route low points
+
+The brief calls this "the single most valuable thing the tool could eventually answer" and "also the easiest place to accidentally fabricate." Both turned out to be true.
+
+**What exists.** The NSW Flood Data Portal (`flooddata.ses.nsw.gov.au`) lists real, specific studies commissioned by Hawkesbury Council: *Hobartville Evacuation Route Study*, *Bligh Park Evacuation Route Study*, *Emergency Flood Evacuation Route Options for Richmond and Londonderry*, and a *Windsor Rd and McGraths Hill* local hydraulics specification study tied to the broader Hawkesbury-Nepean Floodplain Management Strategy's Road Evacuation Route Upgrade program. These are exactly the right documents.
+
+**What's actually accessible.** Nothing. Every file on this portal — not just the GIS layers found in Task 5, but the PDF *reports* too — returns `403 Forbidden` on direct download; a test download of one of the Hawkesbury FRMSP report volumes confirmed this applies to PDFs as much as shapefiles. Only the CKAN metadata API (titles, descriptions, organisation, resource lists) is public. Transport for NSW's open data portal (`opendata.transport.nsw.gov.au`) is reachable and has a "Live Traffic Hazards" feed, but nothing resembling historical flood-closure trigger levels for specific roads.
+
+**What we deliberately didn't do.** NSW Spatial Services publishes LiDAR-derived elevation data (`NSW_Elevation` / `NSW_5m_Elevation` services) that's technically reachable and could be used to eyeball a low point on a road and guess a closure height. We didn't do this. Inferring "this road floods at X metres" from raw terrain data, without a hydraulic model or a council/TfNSW-confirmed threshold behind it, is precisely the kind of invented figure the brief prohibits — a terrain low point is not the same thing as a flood closure trigger, which depends on flow dynamics the elevation data alone doesn't capture. The gap stays marked rather than quietly filled with something that would look authoritative and wouldn't be.
 
 ## What "not yet available" means throughout
 

@@ -731,7 +731,7 @@ function Property({ addr, onBack }) {
           </p>
           <Lvl k="regional" />
           <Gap>
-            The river height at which each route becomes impassable, the low points on your particular way out, and how long this street has previously been isolated. These need council road level data and the Hawkesbury–Nepean flood model.
+            The river height at which each route becomes impassable, the low points on your particular way out, and how long this street has previously been isolated. Hawkesbury Council has commissioned exactly this work — evacuation route studies for Hobartville, Bligh Park, Richmond and Londonderry, plus a Windsor Road/McGraths Hill hydraulics study — but every file on the NSW Flood Data Portal, reports included, is login-gated (see the Flood section above). We deliberately haven't derived closure heights ourselves from elevation data: that's exactly the kind of estimate this tool exists to avoid, however available the terrain data is. A real answer here needs either portal access or Transport for NSW's own road-level records, and TfNSW's open data currently offers live traffic hazards, not historical flood-closure thresholds.
           </Gap>
         </Sec>
 
