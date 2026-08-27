@@ -150,6 +150,34 @@ const HEAT_STATION = {
   dataQuality: "52 of 10,958 days in this window (0.5%) have no recorded maximum, 79 (0.7%) no recorded minimum — small enough not to change the picture, but they mean the true counts could be fractionally higher. A large share of 2014–2026 readings still carry the Bureau's provisional quality flag, pending full quality control.",
 };
 
+/* Task 2 — NSW Spatial Services / DPHI "Greater Sydney Region Tree Canopy to
+   Modified Mesh Block 2024/25". Genuinely block-level: canopy % (vegetation
+   over 3m) for the actual ABS Modified Mesh Block each street sits in, found
+   by locating the street in the NSW road centreline layer and taking the
+   mesh block that contains it — not a suburb average. Block sizes vary
+   hugely on this floodplain (under a hectare in a few places, 200+ ha of
+   cleared "Primary Production" land in others), so several nearby streets
+   legitimately share one figure — that's disclosed, not smoothed over.
+   "Non-vegetated" is the dataset's own category, not the same claim as
+   impervious/hard surface (bare paddock counts as non-vegetated too). */
+const STREET_CANOPY = {
+  "Bensons Lane":       { canopy: 25.6, nonVeg: 39.6, ha: 20.2,  cls: "Primary Production" },
+  "Cornwallis Road":    { canopy: 7.1,  nonVeg: 38.1, ha: 330.6, cls: "Primary Production" },
+  "Cornwells Lane":     { canopy: 3.2,  nonVeg: 20.6, ha: 175.2, cls: "Primary Production" },
+  "Cupritts Lane":      { canopy: 9.1,  nonVeg: 73.2, ha: 11.1,  cls: "Primary Production" },
+  "Gow Lane":           { canopy: 9.1,  nonVeg: 73.2, ha: 11.1,  cls: "Primary Production" },
+  "Ingolds Lane":       { canopy: 33.8, nonVeg: 16.3, ha: 0.5,   cls: "Primary Production" },
+  "Old Kurrajong Road": { canopy: 8.0,  nonVeg: 23.1, ha: 44.0,  cls: "Primary Production" },
+  "Onus Lane":          { canopy: 25.6, nonVeg: 39.6, ha: 20.2,  cls: "Primary Production" },
+  "Percival Street":    { canopy: 8.5,  nonVeg: 53.9, ha: 4.0,   cls: "Infrastructure" },
+  "Powells Lane":       { canopy: 14.1, nonVeg: 20.8, ha: 226.1, cls: "Primary Production" },
+  "Ridges Lane":        { canopy: 14.1, nonVeg: 20.8, ha: 226.1, cls: "Primary Production" },
+  "Triangle Lane":      { canopy: 14.1, nonVeg: 20.8, ha: 226.1, cls: "Primary Production" },
+  "Kurrajong Road":     { canopy: 49.3, nonVeg: 36.8, ha: 6.2,   cls: "Primary Production" },
+  "Francis Street":     null,
+  "Dight Street":       { canopy: 6.7,  nonVeg: 39.5, ha: 274.3, cls: "Residential" },
+};
+
 const EVENTS = [
   { yr: "Oct 2019", t: "Gospers Mountain fire starts", tone: C.fire, d: "One lightning strike in inaccessible bushland north-west of here." },
   { yr: "Jan 2020", t: "Fire contained", tone: C.fire, d: "512,000+ hectares burnt across six local government areas including the Hawkesbury. Around 90 homes destroyed. Rain finally put it out in February." },
@@ -179,6 +207,8 @@ const SOURCES = [
   "Bureau of Meteorology — heatwave definition and heatwave service",
   "Bureau of Meteorology — Climate Data Online, station 067105 Richmond RAAF, daily max/min temperature (IDCJAC0010 / IDCJAC0011), fetched 27 Aug 2026",
   "Nairn & Fawcett (2013), The excess heat factor: a metric for heatwave intensity and its use in classifying heatwave severity — methodology applied to the station 067105 record above",
+  "NSW Department of Planning, Housing and Infrastructure — Greater Sydney Region Tree Canopy to Modified Mesh Block 2024/25 (canopy and non-vegetated cover)",
+  "NSW Spatial Services — road centreline data, used to locate each street against the canopy mapping",
   "NSW Rural Fire Service — Australian Fire Danger Rating System; Gospers Mountain containment records",
   "Australian Disaster Resilience Knowledge Hub — Black Summer bushfires NSW 2019–20",
   "Pfautsch, Wujeska-Klause & Walters (2025), Weather and Climate Extremes",
@@ -521,6 +551,7 @@ function Property({ addr, onBack }) {
 
   const shown = addr.raw.toLowerCase().includes(addr.suburb.toLowerCase()) ? addr.raw : `${addr.raw}, ${addr.suburb}`;
   const heat = HEAT_MARKS[heatSel];
+  const canopy = STREET_CANOPY[addr.street];
 
   const SNAP = [
     ["Flood", "High", C.fire, "On the floodplain"],
@@ -764,9 +795,35 @@ function Property({ addr, onBack }) {
             ))}
           </div>
 
-          <Gap>
-            Canopy cover for this block from NSW spatial data. That part of the heat picture is a separate build task from the local record above.
-          </Gap>
+          <div style={{ marginTop: 32 }}>
+            <Eyebrow>Canopy over this street</Eyebrow>
+            {canopy ? (
+              <>
+                <div style={{ marginBottom: 12 }}><Lvl k="street" /></div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 1, background: C.hair, border: `1px solid ${C.hair}`, marginBottom: 14 }}>
+                  <div style={{ background: C.page, padding: "22px 20px" }}>
+                    <p style={{ ...disp, fontSize: 26, fontWeight: 500, color: C.go, margin: "0 0 5px", letterSpacing: "-.025em", lineHeight: 1 }}>{canopy.canopy}%</p>
+                    <p style={{ ...body, fontSize: 12.5, color: C.ink50, margin: 0 }}>tree canopy (over 3m)</p>
+                  </div>
+                  <div style={{ background: C.page, padding: "22px 20px" }}>
+                    <p style={{ ...disp, fontSize: 26, fontWeight: 500, color: C.ink, margin: "0 0 5px", letterSpacing: "-.025em", lineHeight: 1 }}>{canopy.nonVeg}%</p>
+                    <p style={{ ...body, fontSize: 12.5, color: C.ink50, margin: 0 }}>non-vegetated</p>
+                  </div>
+                  <div style={{ background: C.page, padding: "22px 20px" }}>
+                    <p style={{ ...disp, fontSize: 26, fontWeight: 500, color: C.ink, margin: "0 0 5px", letterSpacing: "-.025em", lineHeight: 1 }}>{canopy.ha}ha</p>
+                    <p style={{ ...body, fontSize: 12.5, color: C.ink50, margin: 0 }}>size of that mapped block</p>
+                  </div>
+                </div>
+                <p style={{ ...body, fontSize: 14.5, color: C.ink80, margin: 0, lineHeight: 1.6, maxWidth: "60ch" }}>
+                  From the actual ABS Modified Mesh Block your street sits in ("{canopy.cls}" land use), not a suburb average — NSW Spatial Services' 2024/25 canopy mapping. On this floodplain that block can be small or it can run to hundreds of hectares of cleared farmland, in which case neighbouring streets legitimately share this figure. "Non-vegetated" isn't the same claim as hard or impervious surface — bare paddock counts as non-vegetated too, and this dataset doesn't separate the two.
+                </p>
+              </>
+            ) : (
+              <Gap>
+                This street didn't resolve to a road in the NSW state road network dataset used to locate it against the canopy mapping, so no block-specific figure is shown. It may be an unformed or private access road not carried in that layer — worth checking directly against council records.
+              </Gap>
+            )}
+          </div>
         </Sec>
 
         {/* buying */}
