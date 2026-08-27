@@ -205,6 +205,28 @@ const STREET_BFPL = {
   "Dight Street":       { mapped: false },
 };
 
+/* Task 4 — NPWS Fire History (Wildfires and Prescribed Burns), queried live
+   from the NPWS ArcGIS service (mapprod3.environment.nsw.gov.au). Distances
+   are computed from the centroid of the 14 geocoded streets (or, for the
+   Gospers Mountain figure, from the single nearest street) to the actual
+   fire-perimeter geometry, in metres, then converted — not read off a map
+   by eye. This dataset mostly captures NPWS estate plus fires NSW RFS and
+   Forestry Corporation choose to import; it is not a complete record of
+   every ignition on private or agricultural land, which is exactly the
+   grassfire gap the panel above already describes. */
+const FIRE_HISTORY = {
+  gospersDistanceKm: 11.6,
+  gospersNearestStreet: "Kurrajong Road",
+  gospersAreaHa: 479514,
+  radiusKm: 10,
+  wildfireCount: 32,
+  burnCount: 24,
+  nearestWildfireKm: 5.8,
+  nearestBurnKm: 4.8,
+  nearestNamed: { name: "Richmond Rd Grass Fire", year: "2013", km: 6.0, ha: 292 },
+  recordSpan: "1974/75–2024/25",
+};
+
 const EVENTS = [
   { yr: "Oct 2019", t: "Gospers Mountain fire starts", tone: C.fire, d: "One lightning strike in inaccessible bushland north-west of here." },
   { yr: "Jan 2020", t: "Fire contained", tone: C.fire, d: "512,000+ hectares burnt across six local government areas including the Hawkesbury. Around 90 homes destroyed. Rain finally put it out in February." },
@@ -236,6 +258,7 @@ const SOURCES = [
   "Nairn & Fawcett (2013), The excess heat factor: a metric for heatwave intensity and its use in classifying heatwave severity — methodology applied to the station 067105 record above",
   "NSW Department of Planning, Housing and Infrastructure — Greater Sydney Region Tree Canopy to Modified Mesh Block 2024/25 (canopy and non-vegetated cover)",
   "NSW Spatial Services — road centreline data, used to locate each street against the canopy mapping",
+  "NSW National Parks and Wildlife Service — Fire History (Wildfires and Prescribed Burns), queried live via mapprod3.environment.nsw.gov.au",
   "NSW Rural Fire Service — Australian Fire Danger Rating System; Gospers Mountain containment records",
   "Australian Disaster Resilience Knowledge Hub — Black Summer bushfires NSW 2019–20",
   "Pfautsch, Wujeska-Klause & Walters (2025), Weather and Climate Extremes",
@@ -740,7 +763,29 @@ function Property({ addr, onBack }) {
             The largest fire from a single ignition point in Australian history.
           </p>
           <Lvl k="regional" />
-          <Gap>Fire history for this street — previous ignitions, hazard reduction burns, and how close the 2019–20 front came. NSW RFS and NPWS hold fire history mapping that would answer it.</Gap>
+
+          <div style={{ marginTop: 32 }}>
+            <Eyebrow>How close the front actually came</Eyebrow>
+            <div style={{ marginBottom: 12 }}><Lvl k="locality" /></div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 1, background: C.hair, border: `1px solid ${C.hair}`, marginBottom: 14 }}>
+              {[
+                [`${FIRE_HISTORY.gospersDistanceKm} km`, `closest Gospers Mountain got, to ${FIRE_HISTORY.gospersNearestStreet}`, C.fire],
+                [String(FIRE_HISTORY.wildfireCount), `other wildfires mapped within ${FIRE_HISTORY.radiusKm} km`, C.silt],
+                [String(FIRE_HISTORY.burnCount), `hazard reduction burns within ${FIRE_HISTORY.radiusKm} km`, C.go],
+              ].map(([v, l, t]) => (
+                <div key={l} style={{ background: C.page, padding: "22px 20px" }}>
+                  <p style={{ ...disp, fontSize: 26, fontWeight: 500, color: t, margin: "0 0 5px", letterSpacing: "-.025em", lineHeight: 1 }}>{v}</p>
+                  <p style={{ ...body, fontSize: 12.5, color: C.ink50, margin: 0 }}>{l}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ ...body, fontSize: 15, color: C.ink80, margin: "0 0 14px", lineHeight: 1.65, maxWidth: "60ch" }}>
+              From NPWS's own fire history mapping ({FIRE_HISTORY.recordSpan}, where captured), measured from the nearest of the 14 located streets to the actual fire boundary — not estimated by eye. The nearest named event is closer to home than Gospers Mountain: the <strong>{FIRE_HISTORY.nearestNamed.name}</strong> ({FIRE_HISTORY.nearestNamed.year}, {FIRE_HISTORY.nearestNamed.ha} ha), about {FIRE_HISTORY.nearestNamed.km} km away.
+            </p>
+            <Gap title="What this doesn't cover">
+              Nothing wildfire or hazard-reduction is mapped within {FIRE_HISTORY.nearestBurnKm} km of these streets in this dataset — but NPWS Fire History mainly records fires on NPWS estate, plus what RFS and Forestry Corporation choose to import. It is not a register of every ignition on private or agricultural land, so this isn't evidence these streets have never burned — it's the same gap the grassfire panel above describes, from a different angle. Previous ignitions and hazard reduction burns for this specific property would need NSW RFS's own incident records, which weren't reachable from this build (rfs.nsw.gov.au is blocked in this environment — see README).
+            </Gap>
+          </div>
 
           <div style={{ marginTop: 44 }}>
             <Eyebrow>Fire danger ratings</Eyebrow>
