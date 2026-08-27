@@ -24,7 +24,7 @@ Status of each data layer this tool depends on, per the build brief's reporting 
 | Canopy / non-vegetated cover (Task 2) | NSW DPHI — Greater Sydney Region Tree Canopy to Modified Mesh Block 2024/25 | **Connected** — 14 of 15 streets | Street (ABS Modified Mesh Block containing the street) | CC-BY; captured Dec 2024–Apr 2025, `update_freq: notPlanned` |
 | Bush Fire Prone Land (Task 3) | NSW RFS BFPL, `NSW_BushFire_Prone_Land` FeatureServer (portal.spatial.nsw.gov.au) | **Connected** — live point-in-polygon, 13 of 15 streets | Street (one representative point per street) | Public; certified by RFS Commissioner |
 | Local fire history (Task 4) | NPWS Fire History (Wildfires and Prescribed Burns), `NPWS_Fire_History` MapServer (mapprod3.environment.nsw.gov.au) | **Connected** — locality-level, 10 km radius | Locality (NPWS estate + RFS/Forestry-imported fires; not a private-land ignition register) | Public; NPWS-maintained |
-| Street/property flood extents (Task 5) | Hawkesbury City Council flood mapping, NSW Spatial Services, SEED EPI-Flood, 2024 Hawkesbury–Nepean Flood Study | Not yet connected | Unknown until investigated | Public, varies |
+| Street/property flood extents (Task 5) | NSW EPI-Flood (statewide LEP layer); Hawkesbury FRMSP 2025 (NSW Flood Data Portal) | **Investigated — real gap found and documented**, not just unattempted | N/A — see below | EPI-Flood: public, but doesn't cover Hawkesbury LGA. FRMSP 2025 GIS files: require a Flood Data Portal login |
 | Evacuation route low points (Task 6) | Transport for NSW, Hawkesbury City Council road data | Not yet connected | Unknown until investigated | Public, varies |
 | Street coverage & address search (Task 7) | NSW Geographical Names Board, GNAF, OpenStreetMap | Not yet connected — 15 streets from the April 2024 SES order only | Street, moving to address | Public |
 | Deployment (Task 8) | Netlify / Vercel | Not yet deployed | — | — |
@@ -82,6 +82,26 @@ This is queried directly, in the browser, per address — not pre-scraped — wi
 **Gospers Mountain distance.** Queried the specific polygon (`FireName='Gospers Mountain' AND FireYear=201920`), reprojected to GDA2020 / MGA Zone 56 (metres), and measured the minimum distance from that polygon's boundary to the nearest of the 14 geocoded streets (Kurrajong Road) using Shapely — **11.6 km**. The NPWS record for this polygon shows an area of 479,514 ha and dates of 25 Oct 2019 – 9 Feb 2020; the app's existing "512,000+ hectares, ~90 homes, 6 council areas" figures are the broader RFS/ADRKH multi-fire-complex numbers already sourced in the prototype and were left untouched, per the brief ("extend it, don't replace it") — the two figures describe different things (one polygon vs. the whole fire complex) and both are cited separately.
 
 **Nearby fire history.** All wildfire and prescribed-burn polygons within a 10 km radius of the streets' centroid were counted (90 total, fully retrieved — no pagination truncation) and each distance computed the same way (boundary-to-point, not centroid-to-centroid). 32 wildfires and 24 hazard reduction burns fall within that radius, spanning the years the dataset happens to have captured (1974/75–2024/25); nothing is mapped within about 4.8–5.8 km of the streets themselves. The nearest *named* event, "Richmond Rd Grass Fire" (2013, 292 ha, ~6 km away), is reported because it's a real, concrete, closer-to-home data point that also reinforces the app's existing grassfire framing.
+
+### Task 5 — street/property flood extents: what was actually found
+
+This is the one task where the honest answer is "investigated properly, real gap, here's exactly why" — not silence.
+
+**NSW EPI-Flood (the statewide Flood Planning Area layer) doesn't cover Hawkesbury.** Found via `data.nsw.gov.au` → "Environmental Planning Instrument - Flood", a live ArcGIS service:
+
+```
+https://mapprod3.environment.nsw.gov.au/arcgis/rest/services/Planning/Hazard/MapServer/1
+```
+
+Queried point-in-polygon at all 14 geocoded streets: zero results. Before concluding that meant "not flood-mapped," this was checked against Windsor itself (well inside the known 1% AEP floodplain) — also zero. A distinct-values query on `LGA_NAME` across the *entire statewide layer* returned only 10 LGAs: Bathurst Regional, Clarence Valley, Forbes, Hornsby, Mid-Western Regional, Tamworth Regional, Wentworth, Wingecarribee, Wollongong, Yass Valley. **Hawkesbury isn't one of them.** This state layer simply doesn't have Hawkesbury's flood planning clause digitised into it — a real, verifiable statewide coverage gap, not a query failure or a "no flood risk here" result.
+
+**Hawkesbury's actual 2025 flood study exists, at exactly the right resolution — and is access-gated.** The NSW Flood Data Portal (`flooddata.ses.nsw.gov.au`, a separate public CKAN instance, own API reachable) lists, under the *Hawkesbury Floodplain Risk Management Study and Plan 2025* project: a **Flood Planning Area** GIS layer, **Flood emergency response classification maps** (SHP — the SES's own evacuation-relevant classification: flood islands, trapped perimeters, high/low hazard, etc., published March 2025), and raw **TUFLOW hydraulic model outputs**. This is precisely the "street or property flood height" data the brief asks about, from the actual current study named in the brief.
+
+The dataset *metadata* is public (`GET /api/3/action/package_search` and `package_show` both work, no auth). Downloading the *files themselves* returns `403 Forbidden` from the portal's own server — not this environment's egress proxy, since the metadata API on the identical domain works fine. This reads as the data custodian requiring an authenticated/registered Flood Data Portal account for actual GIS downloads, which this build doesn't have and has no legitimate way to obtain. No attempt was made to work around it.
+
+**What would close this gap:** a registered account on the NSW Flood Data Portal (a human, presumably Hawkesbury Council or a consultant with a legitimate need, would need to request access) to download the Flood Planning Area and Flood Emergency Response Classification shapefiles, then a point-in-polygon lookup exactly like Tasks 2–4 above — the method is proven, only the access is missing. Failing that, the same council could be asked directly for a data-sharing arrangement, since they are both the study's owner and the organisation this whole project is trying to demonstrate value to.
+
+The marker post was **not** converted to a slider and no flood height was added to any street or property — per the brief's explicit instruction, that only happens once real model data exists to drive it, and none was actually obtained here, however close it turned out to be.
 
 ## What "not yet available" means throughout
 

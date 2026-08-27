@@ -66,7 +66,7 @@ const MARKS = [
 
 const FLOOD_THREE = [
   { t: "Inundation", q: "Could water enter the land or the house?",
-    a: "Not answerable at this address yet. It needs a surveyed floor level in metres AHD and council flood model data. Neither is public at property level.", lvl: "gap", tone: C.ink50 },
+    a: "Not answerable at this address. The data exists — Hawkesbury City Council's 2025 Floodplain Risk Management Study & Plan includes exactly this, down to flood emergency response classification and hydraulic model output — but the actual GIS files sit behind a login on the NSW Flood Data Portal that a surveyed floor level in metres AHD could then be checked against. Neither the file access nor the survey is available to this build.", lvl: "gap", tone: C.ink50 },
   { t: "Isolation", q: "Could you be cut off even if the house stays dry?",
     a: "Yes. This street sits inside the SES flood warning area for Cornwallis and eastern Richmond Lowlands, where road access goes well before peak flood heights.", lvl: "street", tone: C.silt },
   { t: "Evacuation", q: "How early must you leave, and by which road?",
@@ -264,7 +264,7 @@ const SOURCES = [
   "Pfautsch, Wujeska-Klause & Walters (2025), Weather and Climate Extremes",
   "The Australia Institute — HeatWatch: Extreme Heat in Western Sydney",
   "NSW Rural Fire Service — Bush Fire Prone Land, certified statewide layer, queried live via portal.spatial.nsw.gov.au",
-  "Hawkesbury City Council flood extent mapping — not yet connected",
+  "Hawkesbury City Council — Floodplain Risk Management Study and Plan 2025, NSW Flood Data Portal — dataset located, GIS files require a portal login this build didn't have (see README)",
 ];
 
 /* ═══════════════════════════ atoms ═══════════════════════════ */
@@ -397,7 +397,7 @@ function FloodPost() {
       </div>
 
       <Gap>
-        The height at which this individual property floods, and at which its access road becomes impassable. Those need Hawkesbury City Council flood model data and a property survey. Until then the post shows what is known: official classifications, and what actually happened.
+        The height at which this individual property floods, and at which its access road becomes impassable. This isn't undocumented — Hawkesbury City Council's 2025 Floodplain Risk Management Study & Plan has flood planning area and flood emergency response classification mapping for exactly this LGA, published on the NSW Flood Data Portal — but downloading the actual GIS layers requires an authenticated account the portal didn't grant to this build (its dataset metadata is public; the files themselves 403 without login). Also missing: a surveyed floor level for this property. Until both are available, the post shows what is known: official classifications, and what actually happened.
       </Gap>
 
       <p style={{ ...body, fontSize: 12.5, color: C.ink50, margin: "26px 0 0", lineHeight: 1.6 }}>
