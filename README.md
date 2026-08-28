@@ -27,7 +27,7 @@ Status of each data layer this tool depends on, per the build brief's reporting 
 | Street/property flood extents (Task 5) | NSW EPI-Flood (statewide LEP layer); Hawkesbury FRMSP 2025 (NSW Flood Data Portal) | **Investigated — real gap found and documented**, not just unattempted | N/A — see below | EPI-Flood: public, but doesn't cover Hawkesbury LGA. FRMSP 2025 GIS files: require a Flood Data Portal login |
 | Evacuation route low points (Task 6) | Hawkesbury evacuation route studies (Flood Data Portal); TfNSW open data | **Investigated — same access gap as Task 5**, not fabricated from terrain data | N/A | Studies exist, login-gated; TfNSW open data has no historical closure-height dataset |
 | Street coverage & address search (Task 7) | NSW Spatial Services suburb boundaries + NSW_Property (address-level) | **Connected** — 20 streets, real house numbers verified | Address (house-number match against real property records) | Public |
-| Deployment (Task 8) | Netlify / Vercel | Not yet deployed | — | — |
+| Deployment (Task 8) | Netlify / Vercel | Build-ready, not deployed — no account/token in this environment; deploy manually (below) | — | — |
 
 ### Task 1 — the BOM local heat record
 
@@ -120,6 +120,16 @@ The brief calls this "the single most valuable thing the tool could eventually a
 **Five new streets added**, found by intersecting the official Cornwallis and Richmond Lowlands suburb polygons against the NSW road centreline layer: Cordners Lane and Greenway Crescent (Cornwallis); Dells Lane, Edwards Road and Sandstone Place (Richmond Lowlands). None were in the April 2024 SES order — the app records this distinction per street rather than presenting old and new streets identically.
 
 **Address-level search.** GNAF itself wasn't reachable as a queryable service from this environment, but NSW Spatial Services' `NSW_Property` layer — sourced from the same Valuer-General address authority data — serves the same purpose and is live. For each of the 20 streets, real house numbers were pulled by querying this layer with a small envelope around the street's location and keeping only addresses that exactly match the street name (bounded match, so "Kurrajong Road" doesn't also catch "Old Kurrajong Road" addresses). When a user searches with a house number that matches a real address on record, the app shows a second verification line ("This house number is on record in NSW's property address data"); when it doesn't match, the search still proceeds on the street match alone rather than rejecting a possibly-real address our necessarily-partial lookup missed. This is address-level validation, not full GNAF autocomplete — a genuine step beyond street-only matching, using the real data actually reachable.
+
+### Task 8 — deploy
+
+This build has no Netlify or Vercel account or token, so it couldn't deploy itself — that needs a human with an account. The project is otherwise ready: it's a plain Vite + React static site (`npm run build` → `dist/`), no server, no environment variables, no build-time secrets. A `netlify.toml` is included (build command, publish directory, SPA redirect).
+
+**Netlify** — fastest path: go to app.netlify.com → Add new site → Import an existing project → connect GitHub → pick `sammagnusson1671/richmond-lowlands-hazard`, branch `claude/knowyourplace3-data-coverage-4jnkpk` (or `main`, once merged). Netlify reads `netlify.toml` automatically; no manual config needed. Every push redeploys.
+
+**Vercel** — same idea: vercel.com → Add New → Project → import the same repo. Vercel auto-detects Vite (build command `npm run build`, output `dist`) with no config file required.
+
+Either way, the result is a shareable `https://*.netlify.app` or `https://*.vercel.app` URL, static-hosted, and — since the page is a single responsive column with a 375px floor already tested (see Design in the brief) — should work on a phone without further work.
 
 ## What "not yet available" means throughout
 
